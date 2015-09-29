@@ -102,11 +102,7 @@ if (!class_exists('static_random_posts')) {
                     return;
                 }
                 $post_type = isset( $_POST[ 'srp_post_types' ] ) ? $_POST[ 'srp_post_types' ] : 'none';
-                if ( 'none' != $post_type ) {
-                    update_post_meta( $post_id, '_srp_post_type', $post_type );
-                } else {
-                    delete_post_meta( $post_id, '_srp_post_type' );   
-                }
+                update_post_meta( $post_id, '_srp_post_type', $post_type );
                 if ( isset( $_POST[ 'srp_exclude_terms' ] ) ) {
                     $terms = $_POST[ 'srp_exclude_terms' ];
                     $terms_clean = array();
@@ -132,7 +128,7 @@ if (!class_exists('static_random_posts')) {
                     <select name="srp_post_types">
                         <?php
                         $post_types = get_post_types();
-                        $post_type_meta = get_post_meta( $post_id, '_src_post_type', true );
+                        $post_type_meta = get_post_meta( $post_id, '_srp_post_type', true );
                         echo '<option value="none">None</option>';
                         foreach( $post_types as $post_type_slug => $post_type ) {
                             if ( $post_type_slug == 'srp_type' ) continue;
@@ -150,14 +146,17 @@ if (!class_exists('static_random_posts')) {
                 ?>
                 <div class="widefat">
                     <?php
-                $post_type = get_post_meta( $post_id, '_src_post_type', true );
+                $post_type = get_post_meta( $post_id, '_srp_post_type', true );
                 $taxonomies = get_object_taxonomies( $post_type, 'objects' );
+                if ( empty( $taxonomies ) ) {
+                    printf( '<p>%s</p>', esc_html__( 'There are no taxonomies for this post type.', 'static-random-posts-widget' ) );    
+                }
                 foreach( $taxonomies as $taxonomy_slug => $taxonomy ) {
                     ?>
                     <h2><?php echo esc_html( $taxonomy->label ); ?></h2>
                     <ul>
                     <?php
-                   $excluded_terms = get_post_meta( $post_id, '_srp_exclude_terms', true  );
+                   $excluded_terms = (array)get_post_meta( $post_id, '_srp_exclude_terms', true  );
                    $terms = get_terms( $taxonomy_slug, array( 'hide_empty' => false ) );
                    foreach( $terms as $term ) {
                        printf( '<li><input type="checkbox" value="%1$d" name="srp_exclude_terms[]" data-tax="%2$s", data-term-id="%1$s" id="srp_%1$d" %4$s >&nbsp;&nbsp;<label for="srp_%1$d">%3$s</label></li>', $term->term_id, $taxonomy_slug, $term->name, checked( true, in_array( $term->term_id, $excluded_terms ), false ) );
