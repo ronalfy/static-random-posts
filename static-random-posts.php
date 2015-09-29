@@ -1,19 +1,18 @@
 <?php
 /*
-Plugin Name: Static Random Posts Widget
-Plugin URI: http://www.ronalfy.com/2009/10/26/wordpress-static-random-post
+Plugin Name: Static Random Posts
+Plugin URI: https://wordpress.org/plugins/static-random-posts-widget/
 Description: This plugin allows the display of random posts, but allows the user to determine how often the random posts are refreshed. 
 Author: Ronald Huereca
-Version: 1.2
-Requires at least: 2.9.2
+Version: 2.0
+Requires at least: 4.3.0
 Author URI: http://www.ronalfy.com/
-Some code borrowed from Advanced Random Posts - http://www.yakupgovler.com/?p=416
+Text Domain: static-random-posts-widget
+Domain Path: /languages
 */ 
 
 if (!class_exists('static_random_posts')) {
     class static_random_posts	extends WP_Widget {		
-			var $localizationName = "staticRandom";
-			var $adminOptionsName = "static-random-posts";
 			var $plugin_url = '';
 			
 			
@@ -85,10 +84,7 @@ if (!class_exists('static_random_posts')) {
         			'supports' => array( 'title' )
         		);
         		register_post_type( 'srp_type', $post_type_args );
-				//* Begin Localization Code */
-				$static_random_posts_locale = get_locale();
-				$static_random_posts_mofile = WP_PLUGIN_DIR . "/static-random-posts/languages/" . 'staticRandom' . "-". $static_random_posts_locale.".mo";
-				load_textdomain('staticRandom', $static_random_posts_mofile);
+                load_plugin_textdomain( 'static-random-posts-widget', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
                 add_action( 'add_meta_boxes', array( $this, 'meta_box_init' ) );
                 
                 add_action( 'save_post', array( $this, 'save_post' ) );
@@ -111,14 +107,71 @@ if (!class_exists('static_random_posts')) {
                     }
                     update_post_meta( $post_id, '_srp_exclude_terms', $terms_clean );  
                 }
+                if ( isset( $_POST[ 'srp-hard-refresh' ] ) && $_POST[ 'srp-hard-refresh' ] == '1' ) {
+                    $this->get_post_ids(  $post_id, true );
+                }
             }
 			
 			function meta_box_init() {
                 add_meta_box( 'srp-post-type', __( 'Post Type', 'static-random-posts-widget' ), array( $this, 'meta_box_post_type' ) );
                 
+                add_meta_box( 'srp-posts', __( 'Random Posts', 'static-random-posts-widget' ), array( $this, 'meta_box_posts' ) );
+                
                 add_meta_box( 'srp-tax-types', __( 'Taxonomies and Types to Exclude', 'static-random-posts-widget' ), array( $this, 'meta_box_taxonomy_type' ) );
+                
+                
             }
             
+            public function get_post_ids( $post_id, $force_refresh = false ) {
+                $transient = get_transient( 'srp-' . $post_id );
+                if ( !$transient || $force_refresh ) {
+                    $ids = array();
+
+                     $post_type_meta = get_post_meta( $post_id, '_srp_post_type', true );
+                     $excluded_terms = (array)get_post_meta( $post_id, '_srp_exclude_terms', true  );
+                     $args = array(
+                        'post_type' => $post_type_meta,
+                        'category__not_in',    $excluded_terms,
+                        'post_status' => 'publish',
+                        'orderby' => 'rand',
+                        'posts_per_page' => 10
+                    );
+                    $posts = get_posts( $args );
+                    foreach( $posts as $id => $post ) {
+                        $ids[] = $post->ID;   
+                    }
+                    set_transient( 'srp-' . $post_id, $ids, 60 * 60 * 24 );
+                    return $ids;
+                }
+                return $transient;
+            }
+            
+            public function meta_box_posts() {
+                global $post;
+                $post_id = $post->ID;
+                
+               $post_ids = $this->get_post_ids( $post_id );
+                
+                
+                ?>
+                <div class="widefat">
+                    <ol>
+                        <?php
+                        foreach( $post_ids as $id ) {
+                            global $post;
+                            $post = get_post( $id );
+                            setup_postdata( $post );
+                            ?>
+                            <li><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></li>
+                            <?php
+                        }
+                        ?>
+                    </ol>
+                    <input type="hidden" name="srp-hard-refresh" value="0">
+                    <input type="checkbox" name="srp-hard-refresh" value="1" id="srp-hard-refresh">&nbsp;&nbsp;<label for="srp-hard-refresh"><?php esc_html_e( 'Hard Refresh', 'static-random-posts-widget' ); ?></label>
+                </div>
+                <?php
+            }
             public function meta_box_post_type() {
                 global $post;
                 $post_id = $post->ID;
