@@ -165,6 +165,7 @@ if (!class_exists('static_random_posts')) {
                             <li><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></li>
                             <?php
                         }
+                        wp_reset_postdata();
                         ?>
                     </ol>
                     <input type="hidden" name="srp-hard-refresh" value="0">
