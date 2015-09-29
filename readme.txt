@@ -1,38 +1,27 @@
-=== Static Random Posts Widget ===
+=== Static Random Posts ===
 Contributors: ronalfy
 Tags: ajax, widget, random, widgets
-Requires at least: 2.8.5
-Tested up to: 3.4
+Requires at least: 4.3.0
+Tested up to: 4.3.1
 Stable tag: trunk
 
-Allows the display of random posts, but allows the admin to determine how often the random posts are refreshed.
+Allows the display of random posts as a widget, but allows the admin to determine how often the random posts are refreshed.
 
 == Description ==
 
 Allows the display of random posts, but allows the admin to determine how often the random posts are refreshed.
 
 = Features =
-<h4>Dedicated Admin Panel for...</h4>
-<ul>
-<li>Setting the refresh rate (minutes).</li>
-<li>Setting which categories to exclude.</li>
-</ul>
 
-<h4>Individual Widget Options</h4>
-<ul>
-<li>Can assign a title for each widget.</li>
-<li>Can assign a post limit for each widget.</li>
-</ul>
-
-<h4>Admin Refresh Options on a Post</h4>
-If you are logged is as admin and are viewing a post, you will see a "Refresh" button beneath where the random posts are displayed.  You can click this "Refresh" button and automatically refresh your random posts.
-
-If you use WP Super Cache, clicking "Refresh" also clears the cache so your users can see the new random posts immediately.  
-
-The "Refresh" feature is useful for those who have long refresh times, but want to tweak the output a bit.  
-
+* Create a random search by creating a Random Posts post type.
+* Select in the widget your random search post type.
 
 == Changelog ==
+
+= 2.0 =
+* Released 20150929
+* New interface for adding post types
+
 = 1.2 = 
 * Released 06 June 2012 by Ronalfy
 * Added user refresh on a per-widget basis
@@ -50,14 +39,7 @@ The "Refresh" feature is useful for those who have long refresh times, but want 
 
 == Installation ==
 
-1. Just unzip and upload the "static-random-posts" folder to your plugins directory
-2. Activate the plugin through the 'Plugins' menu in WordPress.
-3. Customize the global options (refresh rate, and categories) in the Settings panel.
-4. Go to Appearance->Widgets and drag the "Static Random Posts" widget into your widget enabled panels.
-5. Customize the widget title, and add a limit for how many posts to display.
-6. Repeat steps 4-5 for each additional widget added.
-
-You can also watch an <a href='http://www.ronalfy.com/wp-content/uploads/2009/10/static-random-posts.mov'>installation video</a> of the Static Random Posts widget.
+After activating the plugin, create a random post search and create a widget.
 
 == Frequently Asked Questions ==
 

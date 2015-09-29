@@ -128,8 +128,6 @@ if (!class_exists('static_random_posts')) {
                         wp_reset_postdata();
                         ?>
                     </ol>
-                    <input type="hidden" name="srp-hard-refresh" value="0">
-                    <input type="checkbox" name="srp-hard-refresh" value="1" id="srp-hard-refresh">&nbsp;&nbsp;<label for="srp-hard-refresh"><?php esc_html_e( 'Hard Refresh', 'static-random-posts-widget' ); ?></label>
                 </div>
                 <?php
             }
@@ -187,7 +185,7 @@ if (!class_exists('static_random_posts')) {
 				extract($args, EXTR_SKIP);
 				echo $before_widget;
 				$post = isset( $instance[ 'post' ] ) ? $instance['post'] : 0;
-				$thumbnail_size = isset( $instance[ 'thumbnail_size' ] ) ? $instance[ 'thumbnail_size' ] : 'small';
+				$thumbnail_size = isset( $instance[ 'thumbnail_size' ] ) ? $instance[ 'thumbnail_size' ] : '0';
 				if ( !$post || $post == 0 ) {
     			    return;	
                 }
@@ -198,7 +196,6 @@ if (!class_exists('static_random_posts')) {
 				if ( !empty( $title ) ) {
 					echo $before_title . $title . $after_title;
 				};
-				echo "<ul class='static-random-posts'>";
                 $get_post_ids = $this->get_post_ids( $post ); 
                 ?>
                 <ul class="static-random-posts">
@@ -207,7 +204,7 @@ if (!class_exists('static_random_posts')) {
                             global $post;
                             $post = get_post( $id );
                             setup_postdata( $post );
-                            if ( has_post_thumbnail( $id ) ) :
+                            if ( has_post_thumbnail( $id ) && $thumbnail_size != 0 ) :
                             ?>
                             <li><a href="<?php the_permalink(); ?>"><?php the_post_thumbnail( $thumbnail_size ); ?><span class="srp-link-title"><?php the_title(); ?></span></a></li>
                             <?php
@@ -240,10 +237,8 @@ if (!class_exists('static_random_posts')) {
 			
 			//Updates widget options
 			function update($new, $old) {
-				$instance = $old;
-				$instance['postlimit'] = intval($new['postlimit']);
 				$instance['post'] = intval($new['post']);
-				$instance['thumbnail_size'] = intval($new['thumbnail_size']);
+				$instance['thumbnail_size'] = sanitize_text_field( $new['thumbnail_size'] );
 				$instance['title'] = sanitize_text_field( $new['title'] );
 				$instance[ 'allow_refresh' ] = $new[ 'allow_refresh' ] == 'true' ? 'true' : 'false';
 				return $instance;
@@ -255,16 +250,15 @@ if (!class_exists('static_random_posts')) {
 					(array)$instance, 
 					array(
 						'title'=> __( "Random Posts", 'static-random-posts-widget' ),
-						'postlimit'=>10,
 						'time'=>'',
 						'post'=>'',
 						'allow_refresh' => 'false',
+						'thumbnail_size' => 0
 				) );
-				$postlimit = intval($instance['postlimit']);
 				$posts = $instance['post'];
 				$title = esc_attr($instance['title']);
 				$allow_refresh = $instance[ 'allow_refresh' ];
-				
+				$thumbnail_size = isset( $instance[ 'thumbnail_size' ] ) ? $instance[ 'thumbnail_size' ] : '0';
 				$args = array(
     				'post_type' => 'srp_type',
     				'post_status' => 'publish',
@@ -294,18 +288,11 @@ if (!class_exists('static_random_posts')) {
                     printf( '<select name="%s">', $this->get_field_name( 'thumbnail_size' ) );
                     printf( '<option value="0">%s</option>', __( 'None', 'static-random-posts-widget' ) );
                     foreach( $image_sizes as $size ) {
-                       printf( '<option value="%s" %s>%s</option>', esc_attr( $size ), selected( $size, $instance_size, false ), esc_html( $size ) );
+                       printf( '<option value="%s" %s>%s</option>', esc_attr( $size ), selected( $size, $thumbnail_size, false ), esc_html( $size ) );
                 }
                 echo '</select>';
     			    ?>
 			    </p>
-			<p>
-				<?php esc_html_e( 'Allow users to refresh the random posts?', 'static-random-posts-widget' ); ?>
-				<input type="radio" name="<?php echo esc_attr( $this->get_field_name( 'allow_refresh' ) ); ?>" id="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_yes' ) ); ?>" value="true" <?php checked( 'true', $allow_refresh ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_yes' ) ); ?>"><?php esc_html_e( 'Yes', 'static-random-posts-widget' ); ?></label><br />
-				<input type="radio" name="<?php echo esc_attr( $this->get_field_name( 'allow_refresh' ) ); ?>" id="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_no' ) ); ?>" value="false" <?php checked( 'false', $allow_refresh ); ?> />
-				<label for="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_no' ) ); ?>"><?php esc_html_e( 'No', 'static-random-posts-widget' ); ?></label>
-			</p>
 			<p><?php _e("Please visit",'static-random-posts-widget')?> <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=srp_type' ) ); ?>"><?php _e("Static Random Posts",'static-random-posts-widget')?></a> <?php _e("to adjust the global settings",'static-random-posts-widget')?>.</p>
 			<?php
 			}//End function form
