@@ -21,11 +21,6 @@ if (!class_exists('static_random_posts')) {
 				
 				//Initialization stuff
 				add_action('init', array( $this, 'init' ) );
-				
-				add_action('wp_print_scripts', array( &$this,'add_post_scripts' ),1000 );
-				//Ajax
-				add_action( 'wp_ajax_refreshstatic', array(&$this, 'ajax_refresh_static_posts') );
-				add_action( 'wp_ajax_nopriv_refreshstatic', array(&$this, 'ajax_refresh_static_posts'));
 				parent::__construct(
         			'srp_widget', // Base ID
         			__( 'Static Random Posts', 'text_domain' ), // Name
@@ -33,41 +28,6 @@ if (!class_exists('static_random_posts')) {
         		);
 				//Create widget
             }
-			
-			//Build new posts and send back via Ajax
-			function ajax_refresh_static_posts() {
-				check_ajax_referer('refreshstaticposts');
-				if ( isset($_POST['number']) ) {
-					$number = absint($_POST['number']);
-					$action = sanitize_text_field( $_POST['action'] );
-					$name = sanitize_text_field( $_POST['name'] );
-					
-					//Get the SRP widgets
-					$settings = get_option($name);
-					$widget = $settings[$number];
-					
-					//Get the new post IDs
-					$widget = $this->build_posts(intval($widget['postlimit']),$widget);
-					$post_ids = $widget['posts'];
-					
-					//Save the settings
-					$settings[$number] = $widget;
-					
-					//Only save if user is admin
-					if ( is_user_logged_in() && current_user_can( 'administrator' ) ) {
-						update_option($name, $settings);
-						
-						//Let's clean up the cache
-						//Update WP Super Cache if available
-						if(function_exists("wp_cache_clean_cache")) {
-							@wp_cache_clean_cache('wp-cache-');
-						}
-					}
-					//Build and send the response
-					die( $this->print_posts( $post_ids, false ) );
-				}
-				exit;			
-			} //end ajax_refresh_static_posts
 			
 			/* init - Run upon WordPress initialization */
 			function init() {
@@ -226,71 +186,36 @@ if (!class_exists('static_random_posts')) {
 			function widget($args, $instance) {
 				extract($args, EXTR_SKIP);
 				echo $before_widget;
-				$title = empty($instance['title']) ? __('Random Posts', 'staticRandom') : apply_filters('widget_title', $instance['title']);
+				$post = isset( $instance[ 'post' ] ) ? $instance['post'] : 0;
+				if ( !$post || $post == 0 ) {
+    			    return;	
+                }
+                
+				$title = empty($instance['title']) ? __('Random Posts', 'static-random-posts-widget') : apply_filters('widget_title', $instance['title']);
 				$allow_refresh = isset( $instance[ 'allow_refresh' ] ) ? $instance[ 'allow_refresh' ] : 'false';
 				
 				if ( !empty( $title ) ) {
 					echo $before_title . $title . $after_title;
 				};
-				//Get posts
-				$post_ids = $this->get_posts($instance);
-				if (!empty($post_ids)) {
-					echo "<ul class='static-random-posts' id='static-random-posts-{$this->number}'>";
-					$this->print_posts($post_ids);
-					echo "</ul>";
-					if (current_user_can('administrator') || 'true' == $allow_refresh ) {
-						$refresh_url = esc_url( wp_nonce_url(admin_url("admin-ajax.php?action=refreshstatic&number=$this->number&name=$this->option_name"), "refreshstaticposts"));
-						echo "<br /><a href='$refresh_url' class='static-refresh'>" . __("Refresh...",'staticRandom') . "</a>";
-					}
-				}
+				echo "<ul class='static-random-posts'>";
+                $get_post_ids = $this->get_post_ids( $post ); 
+                ?>
+                <ul class="static-random-posts">
+                        <?php
+                        foreach( $get_post_ids as $id ) {
+                            global $post;
+                            $post = get_post( $id );
+                            setup_postdata( $post );
+                            ?>
+                            <li><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></li>
+                            <?php
+                        }
+                        wp_reset_postdata();
+                        ?>
+                    </ul>
+                <?php                
 				echo $after_widget;
 			}
-			
-			//Prints or returns the LI structure of the posts
-			function print_posts($post_ids,$echo = true) {
-				if (empty($post_ids)) { return ''; }
-				$posts = get_posts("include=$post_ids");
-				$posts_string = '';
-				foreach ($posts as $post) {
-					$posts_string .= "<li><a href='" . get_permalink($post->ID) . "' title='". esc_attr($post->post_title) ."'>" . esc_html($post->post_title) ."</a></li>\n";
-				}
-				if ($echo) {
-					echo $posts_string;
-				} else {
-					return $posts_string;
-				}
-			}
-			
-			//Returns the post IDs of the posts to retrieve
-			function get_posts($instance, $build = false) {
-				//Get post limit
-				$limit = intval($instance['postlimit']);
-				
-				$all_instances = $this->get_settings();
-				//If no posts, add posts and a time
-				if (empty($instance['posts'])) {
-					//Build the new posts
-					$instance = $this->build_posts($limit,$instance);
-					$all_instances[$this->number] = $instance;
-					update_option( $this->option_name, $all_instances );
-				}  elseif(($instance['time']-time()) <=0) {
-					//Check to see if the time has expired
-					//Rebuild posts
-					$instance = $this->build_posts($limit,$instance);
-					$all_instances[$this->number] = $instance;
-					update_option( $this->option_name, $all_instances );
-				} elseif ($build == true) {
-					//Build for the heck of it
-					$instance = $this->build_posts($limit,$instance);
-					$all_instances[$this->number] = $instance;
-					update_option( $this->option_name, $all_instances );
-				}
-				if (empty($instance['posts'])) {
-					$instance['posts'] = '';
-				}
-				return $instance['posts'];
-			}
-			
 			/**
 			* get_plugin_url()
 			* 
@@ -305,28 +230,13 @@ if (!class_exists('static_random_posts')) {
 					$dir .= '/' . ltrim( $path, '/' );
 				return $dir;	
 			} //get_plugin_url
-	
-			//Builds and saves posts for the widget
-			function build_posts($limit, $instance) {
-				//Get categories to exclude
-				$cats = @implode(',', $this->adminOptions['categories']);
-				
-				$posts = get_posts("cat=$cats&showposts=$limit&orderby=rand"); //get posts by random
-				$post_ids = array();
-				foreach ($posts as $post) {
-					array_push($post_ids, $post->ID);
-				}
-				$post_ids = implode(',', $post_ids);
-				$instance['posts'] = $post_ids;
-				$instance['time'] = time()+(60*intval($this->adminOptions['minutes']));
-				
-				return $instance;
-			}
 			
 			//Updates widget options
 			function update($new, $old) {
+    			
 				$instance = $old;
 				$instance['postlimit'] = intval($new['postlimit']);
+				$instance['post'] = intval($new['post']);
 				$instance['title'] = sanitize_text_field( $new['title'] );
 				$instance[ 'allow_refresh' ] = $new[ 'allow_refresh' ] == 'true' ? 'true' : 'false';
 				return $instance;
@@ -337,55 +247,47 @@ if (!class_exists('static_random_posts')) {
 				$instance = wp_parse_args( 
 					(array)$instance, 
 					array(
-						'title'=> __( "Random Posts", 'staticRandom' ),
-						'postlimit'=>5,
-						'posts'=>'', 
+						'title'=> __( "Random Posts", 'static-random-posts-widget' ),
+						'postlimit'=>10,
 						'time'=>'',
+						'post'=>'',
 						'allow_refresh' => 'false',
 				) );
 				$postlimit = intval($instance['postlimit']);
-				$posts = $instance['posts'];
+				$posts = $instance['post'];
 				$title = esc_attr($instance['title']);
 				$allow_refresh = $instance[ 'allow_refresh' ];
-				?>
-			<p>
-				<label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php _e("Title", 'staticRandom'); ?><input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>" />
+				
+				$args = array(
+    				'post_type' => 'srp_type',
+    				'post_status' => 'publish',
+    				'posts_per_page' => '100'
+                );
+                $posts = get_posts( $args );
+                global $post;
+                printf( '<p>%s</p>', __( 'Select a Random Post', 'static-random-posts-widget' ) );
+                printf( '<select name="%s">', $this->get_field_name( 'post' ) );
+                printf( '<option value="0">%s</option>', __( 'None', 'static-random-posts-widget' ) );
+                foreach( $posts as $post ) {
+                       setup_postdata( $post );
+                       printf( '<option value="%s" %s>%s</option>', absint( $post->ID ), selected( $post->ID, $instance['post'], false ), get_the_title( $post ) );
+                }
+                echo '</select>';
+                ?>
+                <p>
+				<label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php _e("Title", 'static-random-posts-widget'); ?><input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>" />
 				</label>
 			</p>
 			<p>
-				<label for="<?php echo esc_attr($this->get_field_id('postlimit')); ?>"><?php _e("Number of Posts to Show", 'staticRandom'); ?><input class="widefat" id="<?php echo esc_attr($this->get_field_id('postlimit')); ?>" name="<?php echo esc_attr($this->get_field_name('postlimit')); ?>" type="text" value="<?php echo esc_attr($postlimit); ?>" />
-				</label>
-			</p>
-			<p>
-				<?php esc_html_e( 'Allow users to refresh the random posts?', 'staticRandom' ); ?>
+				<?php esc_html_e( 'Allow users to refresh the random posts?', 'static-random-posts-widget' ); ?>
 				<input type="radio" name="<?php echo esc_attr( $this->get_field_name( 'allow_refresh' ) ); ?>" id="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_yes' ) ); ?>" value="true" <?php checked( 'true', $allow_refresh ); ?>/>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_yes' ) ); ?>"><?php esc_html_e( 'Yes', 'staticRandom' ); ?></label><br />
+				<label for="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_yes' ) ); ?>"><?php esc_html_e( 'Yes', 'static-random-posts-widget' ); ?></label><br />
 				<input type="radio" name="<?php echo esc_attr( $this->get_field_name( 'allow_refresh' ) ); ?>" id="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_no' ) ); ?>" value="false" <?php checked( 'false', $allow_refresh ); ?> />
-				<label for="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_no' ) ); ?>"><?php esc_html_e( 'No', 'staticRandom' ); ?></label>
+				<label for="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_no' ) ); ?>"><?php esc_html_e( 'No', 'static-random-posts-widget' ); ?></label>
 			</p>
-			<p><?php _e("Please visit",'staticRandom')?> <a href="options-general.php?page=static-random-posts.php"><?php _e("Static Random Posts",'staticRandom')?></a> <?php _e("to adjust the global settings",'staticRandom')?>.</p>
+			<p><?php _e("Please visit",'static-random-posts-widget')?> <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=srp_type' ) ); ?>"><?php _e("Static Random Posts",'static-random-posts-widget')?></a> <?php _e("to adjust the global settings",'static-random-posts-widget')?>.</p>
 			<?php
 			}//End function form
-			
-			//Add scripts to the front-end of the blog
-			function add_post_scripts() {
-				//Only load the widget if the widget is showing
-				if ( !is_active_widget(true, $this->id, $this->id_base) || is_admin() ) { return; }
-				
-				//queue the scripts
-				wp_enqueue_script("wp-ajax-response");
-				wp_enqueue_script('static_random_posts_script', $this->get_plugin_url( '/js/static-random-posts.js' ), array( "jquery" ) , 1.0);
-				wp_localize_script( 'static_random_posts_script', 'staticrandomposts', $this->get_js_vars());
-			}
-			//Returns various JavaScript vars needed for the scripts
-			function get_js_vars() {
-				return array(
-					'SRP_Loading' => esc_js(__('Loading...', 'staticRandom')),
-					'SRP_Refresh' => esc_js(__('Refresh...', 'staticRandom')),
-					'SRP_AjaxUrl' =>  admin_url('admin-ajax.php')
-				);
-			} //end get_js_vars
-			/*END UTILITY FUNCTIONS*/
     }//End class
 }
 add_action('widgets_init', create_function('', 'return register_widget("static_random_posts");') );
