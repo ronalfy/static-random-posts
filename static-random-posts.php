@@ -73,11 +73,11 @@ if (!class_exists('static_random_posts')) {
             }
 			
 			function meta_box_init() {
-                add_meta_box( 'srp-post-type', __( 'Post Type', 'static-random-posts-widget' ), array( $this, 'meta_box_post_type' ) );
+                add_meta_box( 'srp-post-type', __( 'Post Type', 'static-random-posts-widget' ), array( $this, 'meta_box_post_type' ), 'srp_type' );
                 
-                add_meta_box( 'srp-posts', __( 'Random Posts', 'static-random-posts-widget' ), array( $this, 'meta_box_posts' ) );
+                add_meta_box( 'srp-posts', __( 'Random Posts', 'static-random-posts-widget' ), array( $this, 'meta_box_posts' ), 'srp_type' );
                 
-                add_meta_box( 'srp-tax-types', __( 'Taxonomies and Types to Exclude', 'static-random-posts-widget' ), array( $this, 'meta_box_taxonomy_type' ) );
+                add_meta_box( 'srp-tax-types', __( 'Taxonomies and Types to Exclude', 'static-random-posts-widget' ), array( $this, 'meta_box_taxonomy_type' ),'srp_type'  );
                 
                 
             }
@@ -187,6 +187,7 @@ if (!class_exists('static_random_posts')) {
 				extract($args, EXTR_SKIP);
 				echo $before_widget;
 				$post = isset( $instance[ 'post' ] ) ? $instance['post'] : 0;
+				$thumbnail_size = isset( $instance[ 'thumbnail_size' ] ) ? $instance[ 'thumbnail_size' ] : 'small';
 				if ( !$post || $post == 0 ) {
     			    return;	
                 }
@@ -206,9 +207,15 @@ if (!class_exists('static_random_posts')) {
                             global $post;
                             $post = get_post( $id );
                             setup_postdata( $post );
+                            if ( has_post_thumbnail( $id ) ) :
                             ?>
-                            <li><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></li>
+                            <li><a href="<?php the_permalink(); ?>"><?php the_post_thumbnail( $thumbnail_size ); ?><span class="srp-link-title"><?php the_title(); ?></span></a></li>
                             <?php
+                            else:
+                                ?>
+                            <li><a href="<?php the_permalink(); ?>"><span class="srp-link-title"><?php the_title(); ?></span></a></li>
+                            <?php
+                            endif;
                         }
                         wp_reset_postdata();
                         ?>
@@ -233,10 +240,10 @@ if (!class_exists('static_random_posts')) {
 			
 			//Updates widget options
 			function update($new, $old) {
-    			
 				$instance = $old;
 				$instance['postlimit'] = intval($new['postlimit']);
 				$instance['post'] = intval($new['post']);
+				$instance['thumbnail_size'] = intval($new['thumbnail_size']);
 				$instance['title'] = sanitize_text_field( $new['title'] );
 				$instance[ 'allow_refresh' ] = $new[ 'allow_refresh' ] == 'true' ? 'true' : 'false';
 				return $instance;
@@ -278,6 +285,20 @@ if (!class_exists('static_random_posts')) {
 				<label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php _e("Title", 'static-random-posts-widget'); ?><input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>" />
 				</label>
 			</p>
+			    <p>
+    			    <?php
+        			    
+    			    $image_sizes = get_intermediate_image_sizes();
+    			    $instance_size = isset( $instance[ 'size' ] ) ? $instance[ 'size' ] : '0';
+    			    printf( '<p>%s</p>', __( 'Select an Image Size', 'static-random-posts-widget' ) );
+                    printf( '<select name="%s">', $this->get_field_name( 'thumbnail_size' ) );
+                    printf( '<option value="0">%s</option>', __( 'None', 'static-random-posts-widget' ) );
+                    foreach( $image_sizes as $size ) {
+                       printf( '<option value="%s" %s>%s</option>', esc_attr( $size ), selected( $size, $instance_size, false ), esc_html( $size ) );
+                }
+                echo '</select>';
+    			    ?>
+			    </p>
 			<p>
 				<?php esc_html_e( 'Allow users to refresh the random posts?', 'static-random-posts-widget' ); ?>
 				<input type="radio" name="<?php echo esc_attr( $this->get_field_name( 'allow_refresh' ) ); ?>" id="<?php echo esc_attr( $this->get_field_id( 'allow_refresh_yes' ) ); ?>" value="true" <?php checked( 'true', $allow_refresh ); ?>/>
@@ -291,4 +312,16 @@ if (!class_exists('static_random_posts')) {
     }//End class
 }
 add_action('widgets_init', create_function('', 'return register_widget("static_random_posts");') );
+
+function SRP_Get_Posts( $slug_or_id ) {
+    if ( !is_int( $slug_or_id ) ) {
+        $args = array( 'post_type' => 'srp_type', 'post_status' => 'publish', 'name' => $slug_or_id );
+        $posts = get_posts( $args );
+        if ( !empty( $posts ) ) {
+            $slug_or_id = $posts[ 0 ]->ID;;   
+        }   
+    }
+    $srp = new static_random_posts();
+    return $srp->get_post_ids( $slug_or_id );       
+}
 ?>
