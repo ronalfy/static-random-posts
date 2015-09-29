@@ -16,28 +16,24 @@ if (!class_exists('static_random_posts')) {
 			var $adminOptionsName = "static-random-posts";
 			var $plugin_url = '';
 			
-			/**
-			* PHP 4 Compatible Constructor
-			*/
-			function static_random_posts(){
-				$this->adminOptions = $this->get_admin_options();
+			
+			public function __construct() {
 				$this->plugin_url = rtrim( plugin_dir_url(__FILE__), '/' );
 				
 				//Initialization stuff
-				add_action('init', array(&$this, 'init'));
+				add_action('init', array( $this, 'init' ) );
 				
-				//Admin options
-				add_action('admin_menu', array(&$this,'add_admin_pages'));
-				//JavaScript
-				add_action('wp_print_scripts', array(&$this,'add_post_scripts'),1000);
+				add_action('wp_print_scripts', array( &$this,'add_post_scripts' ),1000 );
 				//Ajax
-				add_action('wp_ajax_refreshstatic', array(&$this, 'ajax_refresh_static_posts'));
-				add_action('wp_ajax_nopriv_refreshstatic', array(&$this, 'ajax_refresh_static_posts'));
-				//Widget stuff
-				$widget_ops = array('description' => __('Shows Static Random Posts.', 'staticRandom') );
+				add_action( 'wp_ajax_refreshstatic', array(&$this, 'ajax_refresh_static_posts') );
+				add_action( 'wp_ajax_nopriv_refreshstatic', array(&$this, 'ajax_refresh_static_posts'));
+				parent::__construct(
+        			'srp_widget', // Base ID
+        			__( 'Static Random Posts', 'text_domain' ), // Name
+        			array( 'description' => __( 'Select random posts', 'static-random-posts-widget'  ), ) // Args
+        		);
 				//Create widget
-				$this->WP_Widget('staticrandomposts', __('Static Random Posts', 'staticRandom'), $widget_ops);
-			}
+            }
 			
 			//Build new posts and send back via Ajax
 			function ajax_refresh_static_posts() {
@@ -76,12 +72,101 @@ if (!class_exists('static_random_posts')) {
 			
 			/* init - Run upon WordPress initialization */
 			function init() {
+                $post_type_args = array(
+        			'public' => true,
+        			'publicly_queryable' => false,
+        			'show_in_menu' => true,
+        			'show_ui' => true,
+        			'query_var' => true,
+        			'rewrite' => false,
+        			'has_archive' => false,
+        			'hierarchical' => false,
+        			'label' => __( 'Random Posts', 'static-random-posts-widget' ),
+        			'supports' => array( 'title' )
+        		);
+        		register_post_type( 'srp_type', $post_type_args );
 				//* Begin Localization Code */
 				$static_random_posts_locale = get_locale();
 				$static_random_posts_mofile = WP_PLUGIN_DIR . "/static-random-posts/languages/" . 'staticRandom' . "-". $static_random_posts_locale.".mo";
 				load_textdomain('staticRandom', $static_random_posts_mofile);
-			//* End Localization Code */
+                add_action( 'add_meta_boxes', array( $this, 'meta_box_init' ) );
+                
+                add_action( 'save_post', array( $this, 'save_post' ) );
 			}//end function init
+			
+			function save_post( $post_id ) {
+                if ( wp_is_post_revision( $post_id ) ) {
+                    return;
+                }
+                if ( 'srp_type' != get_post_type() ) {
+                    return;
+                }
+                $post_type = isset( $_POST[ 'srp_post_types' ] ) ? $_POST[ 'srp_post_types' ] : 'none';
+                if ( 'none' != $post_type ) {
+                    update_post_meta( $post_id, '_srp_post_type', $post_type );
+                } else {
+                    delete_post_meta( $post_id, '_srp_post_type' );   
+                }
+                if ( isset( $_POST[ 'srp_exclude_terms' ] ) ) {
+                    $terms = $_POST[ 'srp_exclude_terms' ];
+                    $terms_clean = array();
+                    foreach( $_POST[ 'srp_exclude_terms' ]  as $term_id ) {
+                        $terms_clean[] = absint( $term_id );
+                    }
+                    update_post_meta( $post_id, '_srp_exclude_terms', $terms_clean );  
+                }
+            }
+			
+			function meta_box_init() {
+                add_meta_box( 'srp-post-type', __( 'Post Type', 'static-random-posts-widget' ), array( $this, 'meta_box_post_type' ) );
+                
+                add_meta_box( 'srp-tax-types', __( 'Taxonomies and Types to Exclude', 'static-random-posts-widget' ), array( $this, 'meta_box_taxonomy_type' ) );
+            }
+            
+            public function meta_box_post_type() {
+                global $post;
+                $post_id = $post->ID;
+                ?>
+                <div class="widefat">
+                    <p><?php esc_html_e( 'Please choose your post type and hit "Update"', 'static-random-posts-widget' ); ?></p>
+                    <select name="srp_post_types">
+                        <?php
+                        $post_types = get_post_types();
+                        $post_type_meta = get_post_meta( $post_id, '_src_post_type', true );
+                        echo '<option value="none">None</option>';
+                        foreach( $post_types as $post_type_slug => $post_type ) {
+                            if ( $post_type_slug == 'srp_type' ) continue;
+                            printf( '<option value="%s" %s>%s</option>', esc_attr( $post_type_slug ), selected( $post_type, $post_type_meta, false ), esc_html( $post_type ) );
+                        }
+                        ?>
+                    </select>
+                </div>
+                <?php
+            }
+            
+            public function meta_box_taxonomy_type() {
+                 global $post;
+                $post_id = $post->ID;
+                ?>
+                <div class="widefat">
+                    <?php
+                $post_type = get_post_meta( $post_id, '_src_post_type', true );
+                $taxonomies = get_object_taxonomies( $post_type, 'objects' );
+                foreach( $taxonomies as $taxonomy_slug => $taxonomy ) {
+                    ?>
+                    <h2><?php echo esc_html( $taxonomy->label ); ?></h2>
+                    <ul>
+                    <?php
+                   $excluded_terms = get_post_meta( $post_id, '_srp_exclude_terms', true  );
+                   $terms = get_terms( $taxonomy_slug, array( 'hide_empty' => false ) );
+                   foreach( $terms as $term ) {
+                       printf( '<li><input type="checkbox" value="%1$d" name="srp_exclude_terms[]" data-tax="%2$s", data-term-id="%1$s" id="srp_%1$d" %4$s >&nbsp;&nbsp;<label for="srp_%1$d">%3$s</label></li>', $term->term_id, $taxonomy_slug, $term->name, checked( true, in_array( $term->term_id, $excluded_terms ), false ) );
+                   }            
+                }
+                    ?>
+                </div>
+                <?php
+            }
 						
 						
 			// widget - Displays the widget
@@ -228,40 +313,7 @@ if (!class_exists('static_random_posts')) {
 			<p><?php _e("Please visit",'staticRandom')?> <a href="options-general.php?page=static-random-posts.php"><?php _e("Static Random Posts",'staticRandom')?></a> <?php _e("to adjust the global settings",'staticRandom')?>.</p>
 			<?php
 			}//End function form
-						/*BEGIN UTILITY FUNCTIONS - Grouped by function and not by name */
-			function add_admin_pages(){
-				add_options_page('Static Random Posts', 'Static Random Posts', 'administrator', basename(__FILE__), array(&$this, 'print_admin_page'));
-			}
-			//Provides the interface for the admin pages
-			function print_admin_page() {
-				include dirname(__FILE__) . '/php/admin-panel.php';
-			}
-			//Returns an array of admin options
-			function get_admin_options() {
-				if (empty($this->adminOptions)) {
-					$adminOptions = array(
-						'minutes' => '5',
-						'categories' => ''
-					);
-					$options = get_option($this->adminOptionsName);
-					if (!empty($options)) {
-						foreach ($options as $key => $option) {
-							if (array_key_exists($key, $adminOptions)) {
-								$adminOptions[$key] = $option;
-							}
-						}
-					}
-					$this->adminOptions = $adminOptions;
-					$this->save_admin_options();								
-				}
-				return $this->adminOptions;
-			}
-			//Saves for admin 
-			function save_admin_options(){
-				if (!empty($this->adminOptions)) {
-					update_option($this->adminOptionsName, $this->adminOptions);
-				}
-			}
+			
 			//Add scripts to the front-end of the blog
 			function add_post_scripts() {
 				//Only load the widget if the widget is showing
