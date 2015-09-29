@@ -204,8 +204,9 @@ if (!class_exists('static_random_posts')) {
                             global $post;
                             $post = get_post( $id );
                             setup_postdata( $post );
-                            if ( has_post_thumbnail( $id ) && $thumbnail_size != 0 ) :
+                            if ( has_post_thumbnail( $id ) && $thumbnail_size != '0' ) :
                             ?>
+                            
                             <li><a href="<?php the_permalink(); ?>"><?php the_post_thumbnail( $thumbnail_size ); ?><span class="srp-link-title"><?php the_title(); ?></span></a></li>
                             <?php
                             else:
