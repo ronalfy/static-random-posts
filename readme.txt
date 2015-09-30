@@ -1,9 +1,10 @@
 === Static Random Posts ===
-Contributors: ronalfy
+Contributors: ronalfy, bigwing
 Tags: ajax, widget, random, widgets
-Requires at least: 4.3.0
+Requires at least: 4.3
 Tested up to: 4.3.1
-Stable tag: trunk
+Stable tag: 2.0.0
+
 
 Allows the display of random posts as a widget, but allows the admin to determine how often the random posts are refreshed.
 
