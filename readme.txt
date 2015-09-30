@@ -12,6 +12,8 @@ Allows the display of random posts as a widget, but allows the admin to determin
 
 Allows the display of random posts, but allows the admin to determine how often the random posts are refreshed.
 
+[youtube https://www.youtube.com/watch?v=o-8y4bs-diU]
+
 = Features =
 
 * Create a random search by creating a Random Posts post type.
