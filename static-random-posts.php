@@ -102,6 +102,7 @@ if (!class_exists('static_random_posts')) {
                     }
                     set_transient( 'srp-' . $post_id, $ids, 60 * 60 * 24 );
                     return $ids;
+                    wp_reset_postdata();
                 }
                 return $transient;
             }
@@ -117,8 +118,10 @@ if (!class_exists('static_random_posts')) {
                 <div class="widefat">
                     <ol>
                         <?php
+                        global $post;
+                        $temp = $post;
                         foreach( $post_ids as $id ) {
-                            global $post;
+                           
                             $post = get_post( $id );
                             setup_postdata( $post );
                             ?>
@@ -126,8 +129,12 @@ if (!class_exists('static_random_posts')) {
                             <?php
                         }
                         wp_reset_postdata();
+                        $post = $temp;
+                        setup_postdata( $post );
                         ?>
                     </ol>
+                    <input type="hidden" name="srp-hard-refresh" value="0">
+                    <input type="checkbox" name="srp-hard-refresh" value="1" id="srp-hard-refresh">&nbsp;&nbsp;<label for="srp-hard-refresh"><?php esc_html_e( 'Hard Refresh', 'static-random-posts-widget' ); ?></label>
                 </div>
                 <?php
             }
@@ -146,6 +153,7 @@ if (!class_exists('static_random_posts')) {
                             if ( $post_type_slug == 'srp_type' ) continue;
                             printf( '<option value="%s" %s>%s</option>', esc_attr( $post_type_slug ), selected( $post_type, $post_type_meta, false ), esc_html( $post_type ) );
                         }
+                        wp_reset_postdata();
                         ?>
                     </select>
                 </div>
@@ -275,6 +283,7 @@ if (!class_exists('static_random_posts')) {
                        printf( '<option value="%s" %s>%s</option>', absint( $post->ID ), selected( $post->ID, $instance['post'], false ), get_the_title( $post ) );
                 }
                 echo '</select>';
+                wp_reset_postdata();
                 ?>
                 <p>
 				<label for="<?php echo esc_attr($this->get_field_id('title')); ?>"><?php _e("Title", 'static-random-posts-widget'); ?><input class="widefat" id="<?php echo esc_attr($this->get_field_id('title')); ?>" name="<?php echo esc_attr($this->get_field_name('title')); ?>" type="text" value="<?php echo esc_attr($title); ?>" />

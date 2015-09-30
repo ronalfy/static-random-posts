@@ -31,11 +31,11 @@ Allows the display of random posts, but allows the admin to determine how often 
 
 == Screenshots ==
 
-1. Static Random Posts Widget under Appearance->Settings
-2. The Widget Options
-3. Global Widget Options under Settings->Static Random Posts
-4. Random Posts on Your Blog
-5. Admin's Refresh Button
+1. Static Random Posts Type Screen and Running Archive
+2. Select which post type you what the posts for
+3. Filter out any terms you don't want
+4. Add Static Posts to a Widget Screen
+5. Widget on the front of the site
 
 == Installation ==
 
@@ -58,3 +58,8 @@ Say, for example, you have the refresh rate set for sixty minutes.  You look at 
 = Can I provide a translation? =
 
 Sure.  Please <a href="http://www.ronalfy.com/contact">contact me</a> to submit your translation.  If you need assistance on how to work with <strong>po</strong> files, please read my article on <a href="http://weblogtoolscollection.com/archives/2007/08/27/localizing-a-wordpress-plugin-using-poedit/">localizing a WordPress plugin</a>. 
+
+== Upgrade ==
+
+= 2.0.0 =
+Big upgrade. Not backwards compatible. 
