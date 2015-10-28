@@ -251,7 +251,8 @@ if (!class_exists('static_random_posts')) {
 				};
                 $get_post_ids = $this->get_post_ids( $post ); 
                 ?>
-                <ul class="static-random-posts">
+                <div class="widget_links">
+                <ul>
                         <?php
                         foreach( $get_post_ids as $id ) {
                             global $post;
@@ -271,6 +272,7 @@ if (!class_exists('static_random_posts')) {
                         wp_reset_postdata();
                         ?>
                     </ul>
+                </div>
                 <?php                
 				echo $after_widget;
 			}
