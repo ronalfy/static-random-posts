@@ -41,7 +41,8 @@ if (!class_exists('static_random_posts')) {
         			'has_archive' => false,
         			'hierarchical' => false,
         			'label' => __( 'Random Posts', 'static-random-posts-widget' ),
-        			'supports' => array( 'title' )
+        			'supports' => array( 'title' ),
+        			'menu_icon' => 'dashicons-unlock'
         		);
         		register_post_type( 'srp_type', $post_type_args );
                 load_plugin_textdomain( 'static-random-posts-widget', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
