@@ -71,12 +71,18 @@ if (!class_exists('static_random_posts')) {
                 if ( isset( $_POST[ 'srp-hard-refresh' ] ) && $_POST[ 'srp-hard-refresh' ] == '1' ) {
                     $this->get_post_ids(  $post_id, true );
                 }
+                if ( isset( $_POST[ 'srp_time' ] ) ) {
+                    $save_time = absint( $_POST[ 'srp_time' ] );
+                    update_post_meta( $post_id, '_srp_time', $save_time );
+                }
             }
 			
 			function meta_box_init() {
                 add_meta_box( 'srp-post-type', __( 'Post Type', 'static-random-posts-widget' ), array( $this, 'meta_box_post_type' ), 'srp_type' );
                 
                 add_meta_box( 'srp-posts', __( 'Random Posts', 'static-random-posts-widget' ), array( $this, 'meta_box_posts' ), 'srp_type' );
+                
+                add_meta_box( 'srp-time', __( 'Total Time of Static Posts in Minutes', 'static-random-posts-widget' ), array( $this, 'meta_box_time' ), 'srp_type' );
                 
                 add_meta_box( 'srp-tax-types', __( 'Taxonomies and Types to Exclude', 'static-random-posts-widget' ), array( $this, 'meta_box_taxonomy_type' ),'srp_type'  );
                 
@@ -101,7 +107,12 @@ if (!class_exists('static_random_posts')) {
                     foreach( $posts as $id => $post ) {
                         $ids[] = $post->ID;   
                     }
-                    set_transient( 'srp-' . $post_id, $ids, 60 * 60 * 24 );
+                    
+                    $srp_time = absint( get_post_meta( $post_id, '_srp_time', true ) );
+                    if ( $srp_time == 0 ) {
+                        $srp_time = 90;
+                    }
+                    set_transient( 'srp-' . $post_id, $ids, 60 * $srp_time );
                     return $ids;
                     wp_reset_postdata();
                 }
@@ -184,6 +195,20 @@ if (!class_exists('static_random_posts')) {
                    }            
                 }
                     ?>
+                </div>
+                <?php
+            }
+            
+            public function meta_box_time() {
+                global $post;
+                $post_id = $post->ID;
+                $time = absint( get_post_meta( $post_id, '_srp_time', true ) );
+                if ( $time == 0 ) {
+                    $time = 90;
+                }
+                ?>
+                <div class="widefat">
+                    <input type="text" name="srp_time" value="<?php echo esc_attr( $time ); ?>" />
                 </div>
                 <?php
             }
