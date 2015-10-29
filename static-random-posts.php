@@ -4,7 +4,7 @@ Plugin Name: Static Random Posts
 Plugin URI: https://wordpress.org/plugins/static-random-posts-widget/
 Description: This plugin allows the display of random posts, but allows the user to determine how often the random posts are refreshed. 
 Author: Ronald Huereca
-Version: 2.0.0
+Version: 2.1.0
 Requires at least: 4.3.0
 Author URI: http://www.ronalfy.com/
 Text Domain: static-random-posts-widget

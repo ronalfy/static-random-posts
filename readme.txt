@@ -3,7 +3,7 @@ Contributors: ronalfy, bigwing
 Tags: ajax, widget, random, widgets
 Requires at least: 4.3
 Tested up to: 4.3.1
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 
 
 Allows the display of random posts as a widget, but allows the admin to determine how often the random posts are refreshed.
@@ -21,8 +21,15 @@ Allows the display of random posts, but allows the admin to determine how often 
 
 == Changelog ==
 
+= 2.1.0 =
+* Released 2015-10-28
+* Changed dash-icon to something more suitable
+* Adding save time for random posts
+* Fixed taxonomies showing when there are no terms
+* Fixing ULs to be more suitable for themes
+
 = 2.0 =
-* Released 20150929
+* Released 2015-09-29
 * New interface for adding post types
 
 = 1.2 = 
@@ -62,7 +69,10 @@ Say, for example, you have the refresh rate set for sixty minutes.  You look at 
 
 Sure.  Please <a href="http://www.ronalfy.com/contact">contact me</a> to submit your translation.  If you need assistance on how to work with <strong>po</strong> files, please read my article on <a href="http://weblogtoolscollection.com/archives/2007/08/27/localizing-a-wordpress-plugin-using-poedit/">localizing a WordPress plugin</a>. 
 
-== Upgrade ==
+== Upgrade Notice ==
+
+= 2.1.0 =
+Dashicon, no more empty taxonomies, added timer option.
 
 = 2.0.0 =
 Big upgrade. Not backwards compatible. 
