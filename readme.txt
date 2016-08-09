@@ -2,8 +2,9 @@
 Contributors: ronalfy, bigwing
 Tags: ajax, widget, random, widgets
 Requires at least: 4.3
-Tested up to: 4.5
+Tested up to: 4.6
 Stable tag: 2.1.0
+Donate link: https://mediaron.com/contribute/
 
 
 Allows the display of random posts as a widget, but allows the admin to determine how often the random posts are refreshed.
