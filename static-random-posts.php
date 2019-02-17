@@ -2,23 +2,23 @@
 /*
 Plugin Name: Static Random Posts
 Plugin URI: https://wordpress.org/plugins/static-random-posts-widget/
-Description: This plugin allows the display of random posts, but allows the user to determine how often the random posts are refreshed. 
+Description: This plugin allows the display of random posts, but allows the user to determine how often the random posts are refreshed.
 Author: Ronald Huereca
-Version: 2.1.0
+Version: 2.1.1
 Requires at least: 4.3.0
 Author URI: http://www.ronalfy.com/
 Text Domain: static-random-posts-widget
 Domain Path: /languages
-*/ 
+*/
 
 if (!class_exists('static_random_posts')) {
-    class static_random_posts	extends WP_Widget {		
+    class static_random_posts	extends WP_Widget {
 			var $plugin_url = '';
-			
-			
+
+
 			public function __construct() {
 				$this->plugin_url = rtrim( plugin_dir_url(__FILE__), '/' );
-				
+
 				//Initialization stuff
 				add_action('init', array( $this, 'init' ) );
 				parent::__construct(
@@ -28,7 +28,7 @@ if (!class_exists('static_random_posts')) {
         		);
 				//Create widget
             }
-			
+
 			/* init - Run upon WordPress initialization */
 			function init() {
                 $post_type_args = array(
@@ -47,10 +47,10 @@ if (!class_exists('static_random_posts')) {
         		register_post_type( 'srp_type', $post_type_args );
                 load_plugin_textdomain( 'static-random-posts-widget', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
                 add_action( 'add_meta_boxes', array( $this, 'meta_box_init' ) );
-                
+
                 add_action( 'save_post', array( $this, 'save_post' ) );
 			}//end function init
-			
+
 			function save_post( $post_id ) {
                 if ( wp_is_post_revision( $post_id ) ) {
                     return;
@@ -66,7 +66,7 @@ if (!class_exists('static_random_posts')) {
                     foreach( $_POST[ 'srp_exclude_terms' ]  as $term_id ) {
                         $terms_clean[] = absint( $term_id );
                     }
-                    update_post_meta( $post_id, '_srp_exclude_terms', $terms_clean );  
+                    update_post_meta( $post_id, '_srp_exclude_terms', $terms_clean );
                 } else {
                     update_post_meta( $post_id, '_srp_exclude_terms', array() );
                 }
@@ -78,19 +78,19 @@ if (!class_exists('static_random_posts')) {
                     update_post_meta( $post_id, '_srp_time', $save_time );
                 }
             }
-			
+
 			function meta_box_init() {
                 add_meta_box( 'srp-post-type', __( 'Post Type', 'static-random-posts-widget' ), array( $this, 'meta_box_post_type' ), 'srp_type' );
-                
+
                 add_meta_box( 'srp-posts', __( 'Random Posts', 'static-random-posts-widget' ), array( $this, 'meta_box_posts' ), 'srp_type' );
-                
+
                 add_meta_box( 'srp-time', __( 'Total Time of Static Posts in Minutes', 'static-random-posts-widget' ), array( $this, 'meta_box_time' ), 'srp_type' );
-                
+
                 add_meta_box( 'srp-tax-types', __( 'Taxonomies and Types to Exclude', 'static-random-posts-widget' ), array( $this, 'meta_box_taxonomy_type' ),'srp_type'  );
-                
-                
+
+
             }
-            
+
             public function get_post_ids( $post_id, $force_refresh = false ) {
                 $transient = get_transient( 'srp-' . $post_id );
                 if ( !$transient || $force_refresh ) {
@@ -118,9 +118,9 @@ if (!class_exists('static_random_posts')) {
 
                     $posts = get_posts( $args );
                     foreach( $posts as $id => $post ) {
-                        $ids[] = $post->ID;   
+                        $ids[] = $post->ID;
                     }
-                    
+
                     $srp_time = absint( get_post_meta( $post_id, '_srp_time', true ) );
                     if ( $srp_time == 0 ) {
                         $srp_time = 90;
@@ -131,14 +131,14 @@ if (!class_exists('static_random_posts')) {
                 }
                 return $transient;
             }
-            
+
             public function meta_box_posts() {
                 global $post;
                 $post_id = $post->ID;
-                
+
                $post_ids = $this->get_post_ids( $post_id );
-                
-                
+
+
                 ?>
                 <div class="widefat">
                     <ol>
@@ -146,7 +146,7 @@ if (!class_exists('static_random_posts')) {
                         global $post;
                         $temp = $post;
                         foreach( $post_ids as $id ) {
-                           
+
                             $post = get_post( $id );
                             setup_postdata( $post );
                             ?>
@@ -184,7 +184,7 @@ if (!class_exists('static_random_posts')) {
                 </div>
                 <?php
             }
-            
+
             public function meta_box_taxonomy_type() {
                  global $post;
                 $post_id = $post->ID;
@@ -194,7 +194,7 @@ if (!class_exists('static_random_posts')) {
                 $post_type = get_post_meta( $post_id, '_srp_post_type', true );
                 $taxonomies = get_object_taxonomies( $post_type, 'objects' );
                 if ( empty( $taxonomies ) ) {
-                    printf( '<p>%s</p>', esc_html__( 'There are no taxonomies for this post type.', 'static-random-posts-widget' ) );    
+                    printf( '<p>%s</p>', esc_html__( 'There are no taxonomies for this post type.', 'static-random-posts-widget' ) );
                 }
                 foreach( $taxonomies as $taxonomy_slug => $taxonomy ) {
                     $excluded_terms = (array)get_post_meta( $post_id, '_srp_exclude_terms', true  );
@@ -211,13 +211,13 @@ if (!class_exists('static_random_posts')) {
                         </ul>
                         <?php
                     }
-                              
+
                 }
                 ?>
                 </div>
                 <?php
             }
-            
+
             public function meta_box_time() {
                 global $post;
                 $post_id = $post->ID;
@@ -231,8 +231,8 @@ if (!class_exists('static_random_posts')) {
                 </div>
                 <?php
             }
-						
-						
+
+
 			// widget - Displays the widget
 			function widget($args, $instance) {
 				extract($args, EXTR_SKIP);
@@ -240,16 +240,16 @@ if (!class_exists('static_random_posts')) {
 				$post = isset( $instance[ 'post' ] ) ? $instance['post'] : 0;
 				$thumbnail_size = isset( $instance[ 'thumbnail_size' ] ) ? $instance[ 'thumbnail_size' ] : '0';
 				if ( !$post || $post == 0 ) {
-    			    return;	
+    			    return;
                 }
-                
+
 				$title = empty($instance['title']) ? __('Random Posts', 'static-random-posts-widget') : apply_filters('widget_title', $instance['title']);
 				$allow_refresh = isset( $instance[ 'allow_refresh' ] ) ? $instance[ 'allow_refresh' ] : 'false';
-				
+
 				if ( !empty( $title ) ) {
 					echo $before_title . $title . $after_title;
 				};
-                $get_post_ids = $this->get_post_ids( $post ); 
+                $get_post_ids = $this->get_post_ids( $post );
                 ?>
                 <div class="widget_links">
                 <ul>
@@ -260,7 +260,7 @@ if (!class_exists('static_random_posts')) {
                             setup_postdata( $post );
                             if ( has_post_thumbnail( $id ) && $thumbnail_size != '0' ) :
                             ?>
-                            
+
                             <li><a href="<?php the_permalink(); ?>"><?php the_post_thumbnail( $thumbnail_size ); ?><span class="srp-link-title"><?php the_title(); ?></span></a></li>
                             <?php
                             else:
@@ -273,12 +273,12 @@ if (!class_exists('static_random_posts')) {
                         ?>
                     </ul>
                 </div>
-                <?php                
+                <?php
 				echo $after_widget;
 			}
 			/**
 			* get_plugin_url()
-			* 
+			*
 			* Returns an absolute url to a plugin item
 			*
 			* @param		string    $path	Relative path to plugin (e.g., /css/image.png)
@@ -288,9 +288,9 @@ if (!class_exists('static_random_posts')) {
 				$dir = $this->plugin_url;
 				if ( !empty( $path ) && is_string( $path) )
 					$dir .= '/' . ltrim( $path, '/' );
-				return $dir;	
+				return $dir;
 			} //get_plugin_url
-			
+
 			//Updates widget options
 			function update($new, $old) {
 				$instance['post'] = intval($new['post']);
@@ -299,11 +299,11 @@ if (!class_exists('static_random_posts')) {
 				$instance[ 'allow_refresh' ] = $new[ 'allow_refresh' ] == 'true' ? 'true' : 'false';
 				return $instance;
 			}
-						
+
 			//Widget form
 			function form($instance) {
-				$instance = wp_parse_args( 
-					(array)$instance, 
+				$instance = wp_parse_args(
+					(array)$instance,
 					array(
 						'title'=> __( "Random Posts", 'static-random-posts-widget' ),
 						'time'=>'',
@@ -338,7 +338,7 @@ if (!class_exists('static_random_posts')) {
 			</p>
 			    <p>
     			    <?php
-        			    
+
     			    $image_sizes = get_intermediate_image_sizes();
     			    $instance_size = isset( $instance[ 'size' ] ) ? $instance[ 'size' ] : '0';
     			    printf( '<p>%s</p>', __( 'Select an Image Size', 'static-random-posts-widget' ) );
@@ -355,17 +355,20 @@ if (!class_exists('static_random_posts')) {
 			}//End function form
     }//End class
 }
-add_action('widgets_init', create_function('', 'return register_widget("static_random_posts");') );
+add_action('widgets_init', 'SRP_Init_Widget' );
 
+function SRP_Init_Widget() {
+    register_widget("static_random_posts");
+}
 function SRP_Get_Posts( $slug_or_id ) {
     if ( !is_int( $slug_or_id ) ) {
         $args = array( 'post_type' => 'srp_type', 'post_status' => 'publish', 'name' => $slug_or_id );
         $posts = get_posts( $args );
         if ( !empty( $posts ) ) {
-            $slug_or_id = $posts[ 0 ]->ID;;   
-        }   
+            $slug_or_id = $posts[ 0 ]->ID;;
+        }
     }
     $srp = new static_random_posts();
-    return $srp->get_post_ids( $slug_or_id );       
+    return $srp->get_post_ids( $slug_or_id );
 }
 ?>

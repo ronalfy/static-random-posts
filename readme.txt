@@ -2,8 +2,8 @@
 Contributors: ronalfy, bigwing
 Tags: ajax, widget, random, widgets
 Requires at least: 4.3
-Tested up to: 4.9
-Stable tag: 2.1.0
+Tested up to: 5.1
+Stable tag: 2.1.1
 Donate link: https://mediaron.com/contribute/
 
 
@@ -22,6 +22,10 @@ Allows the display of random posts, but allows the admin to determine how often 
 
 == Changelog ==
 
+= 2.1.1 =
+* Released 2019-02-16
+* Resolving PHP 7 error message
+
 = 2.1.0 =
 * Released 2015-10-28
 * Changed dash-icon to something more suitable
@@ -33,10 +37,10 @@ Allows the display of random posts, but allows the admin to determine how often 
 * Released 2015-09-29
 * New interface for adding post types
 
-= 1.2 = 
+= 1.2 =
 * Released 06 June 2012 by Ronalfy
 * Added user refresh on a per-widget basis
-= 1.0 = 
+= 1.0 =
 * Released 25 October 2009 by Ronalfy
 * First release.  Yay!
 
@@ -62,18 +66,21 @@ Having the random posts remain static for a period of time gives the user the op
 
 Furthermore, having the random posts static for a time may aid in SEO.
 
-= What's the "Refresh" feature for? = 
+= What's the "Refresh" feature for? =
 
 Say, for example, you have the refresh rate set for sixty minutes.  You look at the current random posts, but aren't impressed with what's showing.  You can click "Refresh" until a suitable line-up of posts are displayed.
 
 = Can I provide a translation? =
 
-Sure.  Please <a href="http://www.ronalfy.com/contact">contact me</a> to submit your translation.  If you need assistance on how to work with <strong>po</strong> files, please read my article on <a href="http://weblogtoolscollection.com/archives/2007/08/27/localizing-a-wordpress-plugin-using-poedit/">localizing a WordPress plugin</a>. 
+Sure.  Please <a href="http://www.ronalfy.com/contact">contact me</a> to submit your translation.  If you need assistance on how to work with <strong>po</strong> files, please read my article on <a href="http://weblogtoolscollection.com/archives/2007/08/27/localizing-a-wordpress-plugin-using-poedit/">localizing a WordPress plugin</a>.
 
 == Upgrade Notice ==
+
+= 2.1.1 =
+Resolving PHP 7 error message
 
 = 2.1.0 =
 Dashicon, no more empty taxonomies, added timer option.
 
 = 2.0.0 =
-Big upgrade. Not backwards compatible. 
+Big upgrade. Not backwards compatible.
