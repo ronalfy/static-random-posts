@@ -2,7 +2,7 @@
 Contributors: ronalfy, bigwing
 Tags: ajax, widget, random, widgets
 Requires at least: 4.3
-Tested up to: 5.2
+Tested up to: 5.3
 Stable tag: 2.1.1
 Donate link: https://mediaron.com/contribute/
 
